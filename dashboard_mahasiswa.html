@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Mahasiswa - Sistem Absensi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-header h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+        
+        .sidebar-menu li {
+            margin: 0.5rem 0;
+        }
+        
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 0.75rem;
+            width: 20px;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border-radius: 10px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .stat-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        
+        .btn-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Toggle Button -->
+    <button class="btn btn-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-graduation-cap me-2"></i><span class="sidebar-text">Mahasiswa</span></h4>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="menu-link active" data-section="dashboard"><i class="fas fa-home"></i><span class="sidebar-text">Dashboard</span></a></li>
+            <li><a href="#" class="menu-link" data-section="riwayat"><i class="fas fa-history"></i><span class="sidebar-text">Riwayat Absensi</span></a></li>
+            <li><a href="#" class="menu-link" data-section="statistik"><i class="fas fa-chart-bar"></i><span class="sidebar-text">Statistik</span></a></li>
+            <li><a href="#" class="menu-link" data-section="profil"><i class="fas fa-user"></i><span class="sidebar-text">Profil</span></a></li>
+            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span class="sidebar-text">Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">
+                    <i class="fas fa-user-graduate me-2"></i>
+                    Dashboard Mahasiswa
+                </span>
+                <div class="navbar-nav ms-auto">
+                    <span class="nav-link">
+                        <i class="fas fa-user me-2"></i>
+                        <span id="userName">Loading...</span>
+                    </span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar-check fa-2x mb-3"></i>
+                            <h3 class="stat-number" id="totalHadir">0</h3>
+                            <p class="stat-label">Total Hadir</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                            <h3 class="stat-number" id="totalTidakHadir">0</h3>
+                            <p class="stat-label">Tidak Hadir</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-percentage fa-2x mb-3"></i>
+                            <h3 class="stat-number" id="persentaseKehadiran">0%</h3>
+                            <p class="stat-label">Persentase Kehadiran</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-book fa-2x mb-3"></i>
+                            <h3 class="stat-number" id="totalMataKuliah">0</h3>
+                            <p class="stat-label">Mata Kuliah</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Grafik Kehadiran</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="attendanceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Peringatan</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="warningContainer">
+                                <p class="text-muted">Memuat data peringatan...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riwayat Absensi Section -->
+        <div id="riwayat" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Riwayat Absensi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Mata Kuliah</th>
+                                    <th>Dosen</th>
+                                    <th>Waktu Masuk</th>
+                                    <th>Waktu Keluar</th>
+                                    <th>Status</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="riwayatTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Section -->
+        <div id="statistik" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Statistik Kehadiran Per Mata Kuliah</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mata Kuliah</th>
+                                    <th>Kelas</th>
+                                    <th>Total Pertemuan</th>
+                                    <th>Hadir</th>
+                                    <th>Tidak Hadir</th>
+                                    <th>Izin</th>
+                                    <th>Sakit</th>
+                                    <th>Persentase</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statistikTable">
+                                <tr>
+                                    <td colspan="8" class="text-center">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profil Section -->
+        <div id="profil" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Profil Mahasiswa</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>ID Mahasiswa</strong></label>
+                                <p class="form-control-plaintext" id="profilIdMahasiswa">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Nama Lengkap</strong></label>
+                                <p class="form-control-plaintext" id="profilNama">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Jurusan</strong></label>
+                                <p class="form-control-plaintext" id="profilJurusan">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Angkatan</strong></label>
+                                <p class="form-control-plaintext" id="profilAngkatan">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Email</strong></label>
+                                <p class="form-control-plaintext" id="profilEmail">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong>No. Telepon</strong></label>
+                                <p class="form-control-plaintext" id="profilTelepon">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Konfigurasi API
+        const API_BASE_URL = 'http://localhost/absensi_system/backend/api';
+        
+        // Data user dari localStorage
+        let userData = JSON.parse(localStorage.getItem('user_data'));
+        let userType = localStorage.getItem('user_type');
+        
+        // Cek apakah user sudah login
+        if (!userData || userType !== 'mahasiswa') {
+            window.location.href = 'login.html';
+        }
+        
+        // Inisialisasi halaman
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProfile();
+            loadDashboardData();
+            setupEventListeners();
+        });
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Sidebar toggle
+            document.getElementById('sidebarToggle').addEventListener('click', function() {
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.getElementById('mainContent');
+                
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            });
+            
+            // Menu navigation
+            document.querySelectorAll('.menu-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links
+                    document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Hide all sections
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Show selected section
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(sectionId).classList.add('active');
+                    
+                    // Load section data
+                    loadSectionData(sectionId);
+                });
+            });
+            
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+        }
+        
+        // Load user profile
+        function loadUserProfile() {
+            document.getElementById('userName').textContent = userData.nama_mahasiswa;
+            
+            // Update profil section
+            document.getElementById('profilIdMahasiswa').textContent = userData.id_mahasiswa;
+            document.getElementById('profilNama').textContent = userData.nama_mahasiswa;
+            document.getElementById('profilJurusan').textContent = userData.jurusan;
+            document.getElementById('profilAngkatan').textContent = userData.angkatan;
+            document.getElementById('profilEmail').textContent = userData.email;
+            document.getElementById('profilTelepon').textContent = userData.no_telepon || '-';
+        }
+        
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load statistik kehadiran
+                const response = await fetch(`${API_BASE_URL}/mahasiswa.php?action=statistik_kehadiran&id_mahasiswa=${userData.id_mahasiswa}`);
+                const result = await response.json();
+                
+                if (result.records && result.records.length > 0) {
+                    updateDashboardStats(result.records);
+                    createAttendanceChart(result.records);
+                    checkWarnings(result.records);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+        
+        // Update dashboard statistics
+        function updateDashboardStats(data) {
+            let totalHadir = 0;
+            let totalTidakHadir = 0;
+            let totalPertemuan = 0;
+            
+            data.forEach(item => {
+                totalHadir += parseInt(item.hadir);
+                totalTidakHadir += parseInt(item.tidak_hadir);
+                totalPertemuan += parseInt(item.total_pertemuan);
+            });
+            
+            const persentase = totalPertemuan > 0 ? Math.round((totalHadir / totalPertemuan) * 100) : 0;
+            
+            document.getElementById('totalHadir').textContent = totalHadir;
+            document.getElementById('totalTidakHadir').textContent = totalTidakHadir;
+            document.getElementById('persentaseKehadiran').textContent = persentase + '%';
+            document.getElementById('totalMataKuliah').textContent = data.length;
+        }
+        
+        // Create attendance chart
+        function createAttendanceChart(data) {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            
+            const labels = data.map(item => item.nama_mk);
+            const hadirData = data.map(item => parseInt(item.hadir));
+            const tidakHadirData = data.map(item => parseInt(item.tidak_hadir));
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hadir',
+                        data: hadirData,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Tidak Hadir',
+                        data: tidakHadirData,
+                        backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Check warnings
+        function checkWarnings(data) {
+            const warningContainer = document.getElementById('warningContainer');
+            let warnings = [];
+            
+            data.forEach(item => {
+                const persentase = parseFloat(item.persentase_kehadiran);
+                if (persentase < 75) {
+                    warnings.push(`
+                        <div class="alert alert-warning">
+                            <strong>${item.nama_mk}</strong><br>
+                            Kehadiran Anda ${persentase}% (kurang dari 75%)
+                        </div>
+                    `);
+                }
+            });
+            
+            if (warnings.length > 0) {
+                warningContainer.innerHTML = warnings.join('');
+            } else {
+                warningContainer.innerHTML = '<div class="alert alert-success">Tidak ada peringatan. Kehadiran Anda baik!</div>';
+            }
+        }
+        
+        // Load section data
+        async function loadSectionData(sectionId) {
+            switch(sectionId) {
+                case 'riwayat':
+                    await loadRiwayatAbsensi();
+                    break;
+                case 'statistik':
+                    await loadStatistikKehadiran();
+                    break;
+            }
+        }
+        
+        // Load riwayat absensi
+        async function loadRiwayatAbsensi() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mahasiswa.php?action=riwayat_absensi&id_mahasiswa=${userData.id_mahasiswa}`);
+                const result = await response.json();
+                
+                const tableBody = document.getElementById('riwayatTable');
+                
+                if (result.records && result.records.length > 0) {
+                    tableBody.innerHTML = result.records.map(item => `
+                        <tr>
+                            <td>${formatDate(item.tanggal)}</td>
+                            <td>${item.nama_mk}</td>
+                            <td>${item.nama_dosen}</td>
+                            <td>${item.waktu_masuk}</td>
+                            <td>${item.waktu_keluar || '-'}</td>
+                            <td><span class="badge ${getStatusBadgeClass(item.status)}">${item.status}</span></td>
+                            <td>${item.keterangan || '-'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada riwayat absensi</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading riwayat absensi:', error);
+            }
+        }
+        
+        // Load statistik kehadiran
+        async function loadStatistikKehadiran() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mahasiswa.php?action=statistik_kehadiran&id_mahasiswa=${userData.id_mahasiswa}`);
+                const result = await response.json();
+                
+                const tableBody = document.getElementById('statistikTable');
+                
+                if (result.records && result.records.length > 0) {
+                    tableBody.innerHTML = result.records.map(item => `
+                        <tr>
+                            <td>${item.nama_mk}</td>
+                            <td>${item.nama_kelas}</td>
+                            <td>${item.total_pertemuan}</td>
+                            <td><span class="badge bg-success">${item.hadir}</span></td>
+                            <td><span class="badge bg-danger">${item.tidak_hadir}</span></td>
+                            <td><span class="badge bg-warning">${item.izin}</span></td>
+                            <td><span class="badge bg-info">${item.sakit}</span></td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar ${getPersentaseClass(item.persentase_kehadiran)}" 
+                                         style="width: ${item.persentase_kehadiran}%">
+                                        ${item.persentase_kehadiran}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Belum ada data statistik</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading statistik kehadiran:', error);
+            }
+        }
+        
+        // Helper functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID');
+        }
+        
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Hadir': return 'bg-success';
+                case 'Tidak Hadir': return 'bg-danger';
+                case 'Izin': return 'bg-warning';
+                case 'Sakit': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        function getPersentaseClass(persentase) {
+            if (persentase >= 75) return 'bg-success';
+            if (persentase >= 50) return 'bg-warning';
+            return 'bg-danger';
+        }
+        
+        // Logout function
+        async function logout() {
+            try {
+                await fetch(`${API_BASE_URL}/logout.php`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                localStorage.removeItem('user_data');
+                localStorage.removeItem('user_type');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
+

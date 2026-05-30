@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Dosen - Sistem Absensi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-header h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+        
+        .sidebar-menu li {
+            margin: 0.5rem 0;
+        }
+        
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-menu i {
+            margin-right: 0.75rem;
+            width: 20px;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border-radius: 10px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+        
+        .btn-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Toggle Button -->
+    <button class="btn btn-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-chalkboard-teacher me-2"></i><span class="sidebar-text">Dosen</span></h4>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="menu-link active" data-section="dashboard"><i class="fas fa-home"></i><span class="sidebar-text">Dashboard</span></a></li>
+            <li><a href="#" class="menu-link" data-section="kelas"><i class="fas fa-users"></i><span class="sidebar-text">Kelas Saya</span></a></li>
+            <li><a href="#" class="menu-link" data-section="absensi"><i class="fas fa-clipboard-check"></i><span class="sidebar-text">Kelola Absensi</span></a></li>
+            <li><a href="#" class="menu-link" data-section="laporan"><i class="fas fa-chart-bar"></i><span class="sidebar-text">Laporan</span></a></li>
+            <li><a href="#" class="menu-link" data-section="profil"><i class="fas fa-user"></i><span class="sidebar-text">Profil</span></a></li>
+            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span class="sidebar-text">Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    Dashboard Dosen
+                </span>
+                <div class="navbar-nav ms-auto">
+                    <span class="nav-link">
+                        <i class="fas fa-user me-2"></i>
+                        <span id="userName">Loading...</span>
+                    </span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x mb-3"></i>
+                            <h3 id="totalKelas">0</h3>
+                            <p>Total Kelas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-graduate fa-2x mb-3"></i>
+                            <h3 id="totalMahasiswa">0</h3>
+                            <p>Total Mahasiswa</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar-check fa-2x mb-3"></i>
+                            <h3 id="totalPertemuan">0</h3>
+                            <p>Total Pertemuan</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);">
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <h3 id="mahasiswaBermasalah">0</h3>
+                            <p>Mahasiswa Bermasalah</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Jadwal Mengajar Hari Ini</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="jadwalHariIni">
+                                <p class="text-muted">Memuat jadwal...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kelas Section -->
+        <div id="kelas" class="content-section">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Kelas yang Diampu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Kode Kelas</th>
+                                    <th>Mata Kuliah</th>
+                                    <th>Nama Kelas</th>
+                                    <th>SKS</th>
+                                    <th>Tahun Akademik</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kelasTable">
+                                <tr>
+                                    <td colspan="6" class="text-center">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Absensi Section -->
+        <div id="absensi" class="content-section">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Kelola Absensi</h5>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#absensiModal">
+                        <i class="fas fa-plus me-2"></i>Buat Absensi Baru
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <select class="form-select" id="filterKelas">
+                                <option value="">Pilih Kelas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="filterTanggal">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary" onclick="loadAbsensiData()">
+                                <i class="fas fa-search me-2"></i>Cari
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mahasiswa</th>
+                                    <th>Tanggal</th>
+                                    <th>Waktu Masuk</th>
+                                    <th>Waktu Keluar</th>
+                                    <th>Status</th>
+                                    <th>Keterangan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="absensiTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Pilih kelas dan tanggal untuk melihat data absensi</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laporan Section -->
+        <div id="laporan" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Laporan Kehadiran</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="laporanKelas">
+                                <option value="">Pilih Kelas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-primary" onclick="generateLaporan()">
+                                <i class="fas fa-chart-line me-2"></i>Generate Laporan
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="laporanContent">
+                        <p class="text-muted">Pilih kelas untuk melihat laporan kehadiran</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profil Section -->
+        <div id="profil" class="content-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Profil Dosen</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>ID Dosen</strong></label>
+                                <p class="form-control-plaintext" id="profilIdDosen">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Nama Lengkap</strong></label>
+                                <p class="form-control-plaintext" id="profilNama">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Email</strong></label>
+                                <p class="form-control-plaintext" id="profilEmail">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><strong>No. Telepon</strong></label>
+                                <p class="form-control-plaintext" id="profilTelepon">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Absensi -->
+    <div class="modal fade" id="absensiModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-clipboard-check me-2"></i>Buat Absensi Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="absensiForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Kelas</label>
+                                    <select class="form-select" id="modalKelas" required>
+                                        <option value="">Pilih Kelas</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tanggal</label>
+                                    <input type="date" class="form-control" id="modalTanggal" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="mahasiswaList">
+                            <p class="text-muted">Pilih kelas untuk melihat daftar mahasiswa</p>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="simpanAbsensi()">Simpan Absensi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Konfigurasi API
+        const API_BASE_URL = 'http://localhost/absensi_system/backend/api';
+        
+        // Data user dari localStorage
+        let userData = JSON.parse(localStorage.getItem('user_data'));
+        let userType = localStorage.getItem('user_type');
+        
+        // Cek apakah user sudah login
+        if (!userData || userType !== 'dosen') {
+            window.location.href = 'login.html';
+        }
+        
+        // Data kelas dosen
+        let kelasData = [];
+        
+        // Inisialisasi halaman
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProfile();
+            loadKelasData();
+            setupEventListeners();
+            
+            // Set tanggal hari ini
+            document.getElementById('filterTanggal').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modalTanggal').value = new Date().toISOString().split('T')[0];
+        });
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Sidebar toggle
+            document.getElementById('sidebarToggle').addEventListener('click', function() {
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.getElementById('mainContent');
+                
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            });
+            
+            // Menu navigation
+            document.querySelectorAll('.menu-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links
+                    document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Hide all sections
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Show selected section
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(sectionId).classList.add('active');
+                    
+                    // Load section data
+                    loadSectionData(sectionId);
+                });
+            });
+            
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            // Modal kelas change
+            document.getElementById('modalKelas').addEventListener('change', function() {
+                loadMahasiswaList(this.value);
+            });
+        }
+        
+        // Load user profile
+        function loadUserProfile() {
+            document.getElementById('userName').textContent = userData.nama_dosen;
+            
+            // Update profil section
+            document.getElementById('profilIdDosen').textContent = userData.id_dosen;
+            document.getElementById('profilNama').textContent = userData.nama_dosen;
+            document.getElementById('profilEmail').textContent = userData.email;
+            document.getElementById('profilTelepon').textContent = userData.no_telepon || '-';
+        }
+        
+        // Load kelas data
+        async function loadKelasData() {
+            try {
+                // Untuk demo, kita akan menggunakan data dummy
+                // Dalam implementasi nyata, panggil API untuk mendapatkan kelas dosen
+                kelasData = [
+                    {
+                        id_kelas: 'SI001',
+                        kode_mk: 'SI101',
+                        nama_mk: 'Pemrograman Web',
+                        nama_kelas: 'SI-2A',
+                        sks: 3,
+                        tahun_akademik: '2024/2025'
+                    },
+                    {
+                        id_kelas: 'SI002',
+                        kode_mk: 'SI102',
+                        nama_mk: 'Basis Data',
+                        nama_kelas: 'SI-2B',
+                        sks: 3,
+                        tahun_akademik: '2024/2025'
+                    }
+                ];
+                
+                updateDashboardStats();
+                populateKelasDropdowns();
+                loadKelasTable();
+            } catch (error) {
+                console.error('Error loading kelas data:', error);
+            }
+        }
+        
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            document.getElementById('totalKelas').textContent = kelasData.length;
+            document.getElementById('totalMahasiswa').textContent = kelasData.length * 25; // Estimasi
+            document.getElementById('totalPertemuan').textContent = kelasData.length * 14; // Estimasi
+            document.getElementById('mahasiswaBermasalah').textContent = '3'; // Dummy data
+        }
+        
+        // Populate kelas dropdowns
+        function populateKelasDropdowns() {
+            const filterKelas = document.getElementById('filterKelas');
+            const laporanKelas = document.getElementById('laporanKelas');
+            const modalKelas = document.getElementById('modalKelas');
+            
+            const options = kelasData.map(kelas => 
+                `<option value="${kelas.id_kelas}">${kelas.nama_mk} - ${kelas.nama_kelas}</option>`
+            ).join('');
+            
+            filterKelas.innerHTML = '<option value="">Pilih Kelas</option>' + options;
+            laporanKelas.innerHTML = '<option value="">Pilih Kelas</option>' + options;
+            modalKelas.innerHTML = '<option value="">Pilih Kelas</option>' + options;
+        }
+        
+        // Load kelas table
+        function loadKelasTable() {
+            const tableBody = document.getElementById('kelasTable');
+            
+            if (kelasData.length > 0) {
+                tableBody.innerHTML = kelasData.map(kelas => `
+                    <tr>
+                        <td>${kelas.id_kelas}</td>
+                        <td>${kelas.nama_mk}</td>
+                        <td>${kelas.nama_kelas}</td>
+                        <td>${kelas.sks}</td>
+                        <td>${kelas.tahun_akademik}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="lihatDetailKelas('${kelas.id_kelas}')">
+                                <i class="fas fa-eye"></i> Detail
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada kelas yang diampu</td></tr>';
+            }
+        }
+        
+        // Load section data
+        function loadSectionData(sectionId) {
+            switch(sectionId) {
+                case 'dashboard':
+                    loadJadwalHariIni();
+                    break;
+            }
+        }
+        
+        // Load jadwal hari ini
+        function loadJadwalHariIni() {
+            const jadwalContainer = document.getElementById('jadwalHariIni');
+            
+            // Dummy data untuk demo
+            const jadwal = [
+                {
+                    waktu: '08:00 - 10:00',
+                    mata_kuliah: 'Pemrograman Web',
+                    kelas: 'SI-2A',
+                    ruang: 'Lab Komputer 1'
+                },
+                {
+                    waktu: '10:30 - 12:30',
+                    mata_kuliah: 'Basis Data',
+                    kelas: 'SI-2B',
+                    ruang: 'Lab Komputer 2'
+                }
+            ];
+            
+            if (jadwal.length > 0) {
+                jadwalContainer.innerHTML = jadwal.map(item => `
+                    <div class="alert alert-info">
+                        <strong>${item.waktu}</strong><br>
+                        ${item.mata_kuliah} - ${item.kelas}<br>
+                        <small>Ruang: ${item.ruang}</small>
+                    </div>
+                `).join('');
+            } else {
+                jadwalContainer.innerHTML = '<div class="alert alert-secondary">Tidak ada jadwal mengajar hari ini</div>';
+            }
+        }
+        
+        // Load absensi data
+        async function loadAbsensiData() {
+            const kelasId = document.getElementById('filterKelas').value;
+            const tanggal = document.getElementById('filterTanggal').value;
+            
+            if (!kelasId || !tanggal) {
+                alert('Pilih kelas dan tanggal terlebih dahulu');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/absensi.php?action=get_by_kelas_date&id_kelas=${kelasId}&tanggal=${tanggal}`);
+                const result = await response.json();
+                
+                const tableBody = document.getElementById('absensiTable');
+                
+                if (result.records && result.records.length > 0) {
+                    tableBody.innerHTML = result.records.map(item => `
+                        <tr>
+                            <td>${item.nama_mahasiswa}</td>
+                            <td>${formatDate(item.tanggal)}</td>
+                            <td>${item.waktu_masuk}</td>
+                            <td>${item.waktu_keluar || '-'}</td>
+                            <td><span class="badge ${getStatusBadgeClass(item.status)}">${item.status}</span></td>
+                            <td>${item.keterangan || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editAbsensi(${item.id_absensi})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada data absensi untuk tanggal ini</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading absensi data:', error);
+                alert('Terjadi kesalahan saat memuat data absensi');
+            }
+        }
+        
+        // Load mahasiswa list for modal
+        function loadMahasiswaList(kelasId) {
+            const container = document.getElementById('mahasiswaList');
+            
+            if (!kelasId) {
+                container.innerHTML = '<p class="text-muted">Pilih kelas untuk melihat daftar mahasiswa</p>';
+                return;
+            }
+            
+            // Dummy data mahasiswa untuk demo
+            const mahasiswa = [
+                { id: 'M001', nama: 'Ahmad Rizki' },
+                { id: 'M002', nama: 'Siti Nurhaliza' },
+                { id: 'M003', nama: 'Budi Santoso' },
+                { id: 'M004', nama: 'Dewi Sartika' },
+                { id: 'M005', nama: 'Eko Prasetyo' }
+            ];
+            
+            container.innerHTML = `
+                <h6>Daftar Mahasiswa:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nama</th>
+                                <th>Waktu Masuk</th>
+                                <th>Status</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${mahasiswa.map(mhs => `
+                                <tr>
+                                    <td>${mhs.id}</td>
+                                    <td>${mhs.nama}</td>
+                                    <td>
+                                        <input type="time" class="form-control form-control-sm" 
+                                               id="waktu_${mhs.id}" value="${new Date().toTimeString().slice(0,5)}">
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm" id="status_${mhs.id}">
+                                            <option value="Hadir">Hadir</option>
+                                            <option value="Tidak Hadir">Tidak Hadir</option>
+                                            <option value="Izin">Izin</option>
+                                            <option value="Sakit">Sakit</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="keterangan_${mhs.id}" placeholder="Keterangan">
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        // Simpan absensi
+        async function simpanAbsensi() {
+            const kelasId = document.getElementById('modalKelas').value;
+            const tanggal = document.getElementById('modalTanggal').value;
+            
+            if (!kelasId || !tanggal) {
+                alert('Pilih kelas dan tanggal terlebih dahulu');
+                return;
+            }
+            
+            // Collect data from form
+            const mahasiswaRows = document.querySelectorAll('#mahasiswaList tbody tr');
+            const absensiData = [];
+            
+            mahasiswaRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const idMahasiswa = cells[0].textContent;
+                const waktuMasuk = document.getElementById(`waktu_${idMahasiswa}`).value;
+                const status = document.getElementById(`status_${idMahasiswa}`).value;
+                const keterangan = document.getElementById(`keterangan_${idMahasiswa}`).value;
+                
+                absensiData.push({
+                    id_kelas: kelasId,
+                    id_mahasiswa: idMahasiswa,
+                    tanggal: tanggal,
+                    waktu_masuk: waktuMasuk,
+                    status: status,
+                    keterangan: keterangan
+                });
+            });
+            
+            // Save each attendance record
+            try {
+                for (const data of absensiData) {
+                    const response = await fetch(`${API_BASE_URL}/absensi.php`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await response.json();
+                    if (!result.message || response.status !== 201) {
+                        console.warn('Warning for student', data.id_mahasiswa, ':', result.message);
+                    }
+                }
+                
+                alert('Absensi berhasil disimpan!');
+                
+                // Close modal and refresh data
+                const modal = bootstrap.Modal.getInstance(document.getElementById('absensiModal'));
+                modal.hide();
+                
+                // Refresh absensi table if same date/class is selected
+                if (document.getElementById('filterKelas').value === kelasId && 
+                    document.getElementById('filterTanggal').value === tanggal) {
+                    loadAbsensiData();
+                }
+                
+            } catch (error) {
+                console.error('Error saving absensi:', error);
+                alert('Terjadi kesalahan saat menyimpan absensi');
+            }
+        }
+        
+        // Generate laporan
+        async function generateLaporan() {
+            const kelasId = document.getElementById('laporanKelas').value;
+            
+            if (!kelasId) {
+                alert('Pilih kelas terlebih dahulu');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/absensi.php?action=laporan_kelas&id_kelas=${kelasId}`);
+                const result = await response.json();
+                
+                const laporanContent = document.getElementById('laporanContent');
+                
+                if (result.nama_mk) {
+                    laporanContent.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Informasi Kelas</h6>
+                                <p><strong>Mata Kuliah:</strong> ${result.nama_mk}</p>
+                                <p><strong>Kelas:</strong> ${result.nama_kelas}</p>
+                                <p><strong>Dosen:</strong> ${result.nama_dosen}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Statistik Kehadiran</h6>
+                                <p><strong>Total Pertemuan:</strong> ${result.total_pertemuan}</p>
+                                <p><strong>Total Hadir:</strong> ${result.total_hadir}</p>
+                                <p><strong>Total Tidak Hadir:</strong> ${result.total_tidak_hadir}</p>
+                                <p><strong>Persentase Kehadiran:</strong> ${result.persentase_kehadiran}%</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    laporanContent.innerHTML = '<div class="alert alert-warning">Belum ada data untuk kelas ini</div>';
+                }
+            } catch (error) {
+                console.error('Error generating laporan:', error);
+                alert('Terjadi kesalahan saat membuat laporan');
+            }
+        }
+        
+        // Helper functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID');
+        }
+        
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Hadir': return 'bg-success';
+                case 'Tidak Hadir': return 'bg-danger';
+                case 'Izin': return 'bg-warning';
+                case 'Sakit': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        function lihatDetailKelas(kelasId) {
+            alert('Fitur detail kelas akan dikembangkan lebih lanjut');
+        }
+        
+        function editAbsensi(absensiId) {
+            alert('Fitur edit absensi akan dikembangkan lebih lanjut');
+        }
+        
+        // Logout function
+        async function logout() {
+            try {
+                await fetch(`${API_BASE_URL}/logout.php`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                localStorage.removeItem('user_data');
+                localStorage.removeItem('user_type');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
+
